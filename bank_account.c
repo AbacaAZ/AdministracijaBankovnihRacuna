@@ -42,20 +42,21 @@ void printAccounts(const ACCOUNT* const* const accs, const int n) {
 	}
 }
 
-ACCOUNT** findByFullName(const char* const name, const char* const surname, int* const count) {
+ACCOUNT** findByFullName(const char* const name, const char* const surname, int* const matches) {
 	ACCOUNT** temp = NULL;
 	temp = (ACCOUNT**)calloc(g_accounts, sizeof(ACCOUNT*));
+	if (!temp) {
+		perror("Failed to allocate memory for account");
+		exit(EXIT_FAILURE);
+	}
+
 	for (int i = 0; i < g_accounts; i++) {
 		temp[i] = (ACCOUNT*)calloc(1, sizeof(ACCOUNT));
 		if (!temp[i]) {
 			safeFreeArr(&temp, i + 1);
-			break;
+			perror("Failed to allocate memory for account");
+			exit(EXIT_FAILURE);
 		}
-	}
-	
-	if (!*temp) {
-		perror("Failed to allocate memory for account");
-		return NULL;
 	}
 
 	FILE* fp = NULL;
@@ -71,17 +72,23 @@ ACCOUNT** findByFullName(const char* const name, const char* const surname, int*
 		read = fread(temp[i], sizeof(ACCOUNT), 1, fp);
 		if (!read) {
 			break;
-		}
-		if (!strcmp(temp[i]->name, name) && !strcmp(temp[i]->surname, surname)) {
+		} else if (!strcmp(temp[i]->name, name) && !strcmp(temp[i]->surname, surname)) {
 			i++;
 		}
 	}
 
-	*count = i;
+	*matches = i;
+	if (*matches == 0) {
+		fclose(fp);
+		safeFreeArr(&temp, g_accounts);
+		system("cls");
+		printf("No accounts with that name and surname\n");
+		return NULL;
+	}
 
 	ACCOUNT** accs = NULL;
-	accs = (ACCOUNT**)calloc(*count, sizeof(ACCOUNT*));
-	for (int j = 0; j < *count; j++) {
+	accs = (ACCOUNT**)calloc(*matches, sizeof(ACCOUNT*));
+	for (int j = 0; j < *matches; j++) {
 		accs[j] = (ACCOUNT*)calloc(1, sizeof(ACCOUNT));
 		if (!accs[j]) {
 			safeFreeArr(&accs, j + 1);
@@ -89,7 +96,7 @@ ACCOUNT** findByFullName(const char* const name, const char* const surname, int*
 		}
 	}
 
-	for (int j = 0; j < *count; j++) {
+	for (int j = 0; j < *matches; j++) {
 		strcpy(accs[j]->name, temp[j]->name);
 		strcpy(accs[j]->surname, temp[j]->surname);
 		accs[j]->ID = temp[j]->ID;
@@ -99,14 +106,11 @@ ACCOUNT** findByFullName(const char* const name, const char* const surname, int*
 	safeFreeArr(&temp, g_accounts);
 	fclose(fp);
 
-	if (*count == 0) {
-		return NULL;
-	}
-
 	return accs;
 }
 
 ACCOUNT* findByID(const int ID) {
+	system("cls");
 	ACCOUNT* acc = NULL;
 	acc = (ACCOUNT*)calloc(1, sizeof(ACCOUNT));
 	if (!acc) {
@@ -142,6 +146,7 @@ ACCOUNT* findByID(const int ID) {
 }
 
 ACCOUNT* createAccount(){
+	system("cls");
 	ACCOUNT* acc = NULL;
 	acc = (ACCOUNT*)calloc(1, sizeof(ACCOUNT));
 	if (!acc) {
@@ -151,19 +156,17 @@ ACCOUNT* createAccount(){
 
 	printf("Enter \"end\" to cancel input\n");
 
-	if (!setName(acc)) {
+	if (setName(acc) || setSurname(acc)) {
 		return NULL;
 	}
 
-	if (!setSurname(acc)) {
-		return NULL;
-	}
 	setID(acc);
 	int check = setPassword(acc);
-	while (check == 2) {
+	while (check == RETURN_TRY_AGAIN) {
 		check = setPassword(acc);
 	}
-	if (!check) {
+
+	if (check) {
 		return NULL;
 	}
 	acc->balance = 0;
@@ -255,22 +258,22 @@ int setName(ACCOUNT* const acc) {
 	char name[31] = { '\0' };
 	printf("Enter name: ");
 	if (!inputString(name, nameCondition) || !strcmp(name, "end")) {
-		return 0;
+		return 1;
 	}
 
 	strcpy(acc->name, name);
-	return 1;
+	return 0;
 }
 
 int setSurname(ACCOUNT* const acc) {
 	char surname[31] = { '\0' };
 	printf("Enter surname: ");
 	if (!inputString(surname, surnameCondition) || !strcmp(surname, "end")) {
-		return 0;
+		return 1;
 	}
 
 	strcpy(acc->surname, surname);
-	return 1;
+	return 0;
 }
 
 int nameCondition(const char* const str) {

@@ -2,6 +2,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 #include <stdio.h>
+#include <stdlib.h>
 #include "menus.h"
 #include "util.h"
 #include "bank_account.h"
@@ -45,9 +46,9 @@ int loginMenu() {
 	char choice = 0;
 
 	enum choices {
-		END_PROGRAM,
-		SIGN_UP,
-		LOG_IN
+		END_PROGRAM = '0',
+		SIGN_UP = '1',
+		LOG_IN = '2'
 	};
 
 	do {
@@ -56,22 +57,21 @@ int loginMenu() {
 
 		do {
 			scanf("%1c", &choice);
-			choice -= '0';
 		} while (choice < 0 && choice > 2);
 
 		switch (choice) {
 		case SIGN_UP:
 			if (signUp()) {
-
+				return RETURN_FAILURE;
 			}
 			break;
 		case LOG_IN:
 			if (login(NULL)) {
-
+				return RETURN_FAILURE;
 			}
 			break;
 		case END_PROGRAM:
-			return 0;
+			return RETURN_SUCCESS;
 			break;
 		default:
 			system("cls");
@@ -79,7 +79,7 @@ int loginMenu() {
 		}
 	} while (currAcc == NULL);
 
-	return 1;
+	return RETURN_SUCCESS;
 }
 
 void printLoginMenu() {
@@ -89,8 +89,12 @@ void printLoginMenu() {
 ACCOUNT* signUp() {
 	ACCOUNT* acc = NULL;
 	acc = createAccount();
-	if (!acc) {
-		login(acc);
+
+	if (acc) {
+		registerAccount(acc);
+		if (login(acc)) {
+			return NULL;
+		}
 	}
 	return acc;
 }
@@ -98,26 +102,27 @@ ACCOUNT* signUp() {
 int login(const ACCOUNT* const acc) {
 	if (acc != NULL) {
 		currAcc = acc;
-		return 1;
+		return RETURN_SUCCESS;
 	}
 
 	char name[31] = { '\0' };
 	char surname[31] = { '\0' };
 	char password[31] = { '\0' };
+
+	system("cls");
 	printf("Enter \"end\" to cancel input\n");
 
 	printf("Enter name: ");
 	if (inputString(name, nameCondition)) {
 		printf("Enter surname: ");
 		if (!inputString(surname, surnameCondition)) {
-			return 1;
+			return RETURN_FAILURE;
 		}
 	}
 	else {
-		return 1;
+		return RETURN_FAILURE;
 	}
 	
-	system("cls");
 
 	int matches = 0;
 	ACCOUNT** accs = findByFullName(name, surname, &matches);
@@ -128,11 +133,11 @@ int login(const ACCOUNT* const acc) {
 	for (int i = 0; i < 3; i++) {
 		printf("Enter passsword: ");
 		if (!inputString(password, passwordCondition)) {
-			return 1;
+			return RETURN_FAILURE;
 		}
 		
 		if (!password) {
-			return 1;
+			return RETURN_FAILURE;
 		}
 		system("cls");
 
@@ -155,8 +160,8 @@ int login(const ACCOUNT* const acc) {
 	}
 
 	if (!currAcc) {
-		return 1;
+		return RETURN_FAILURE;
 	}
 
-	return 0;
+	return RETURN_SUCCESS;
 }

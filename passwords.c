@@ -6,29 +6,31 @@
 #include <string.h>
 #include <ctype.h>
 
-int setPassword(ACCOUNT* const acc) {
-	char password[31] = { '\0' };
+int inputPassword(char* const password){
 	char password2[31] = { '\0' };
 
 	do {
 		printf("Enter password: ");
-		if (!inputString(password, passwordCondition) || !strcmp(password, "end")) {
-			return 0;
+		if (!inputString(password, passwordCondition)/* || !strcmp(password, "end")*/) {
+			return RETURN_ABORT;
 		}
 
 		printf("Confirm password: ");
-		if (!inputString(password2, passwordCondition) || !strcmp(password, "end")) {
-			return 0;
+		if (!inputString(password2, passwordCondition)/* || !strcmp(password, "end")*/) {
+			return RETURN_ABORT;
 		}
 
 		if (strcmp(password, password2)) {
 			printf("The passwords don't match\n");
+			return RETURN_FAILURE;
 		}
 		else {
-			break;
+			return RETURN_SUCCESS;
 		}
 	} while (1);
+}
 
+int registerPassword(const char* const password, ACCOUNT* const acc) {
 	PASSWORD pass = { 0 };
 	int nmRead = 0;
 	int hash = 0;
@@ -39,7 +41,7 @@ int setPassword(ACCOUNT* const acc) {
 	pass.hash = hash;
 	pass.index = 0;
 	if (adjustDuplicateIndex(&pass)) {
-		return 2;
+		return RETURN_TRY_AGAIN;
 	}
 	acc->index = pass.index;
 
@@ -54,8 +56,31 @@ int setPassword(ACCOUNT* const acc) {
 	fwrite(&pass, sizeof(PASSWORD), 1, fp);
 
 	fclose(fp);
+	return RETURN_SUCCESS;
+}
 
-	return 1;
+int setPassword(ACCOUNT* const acc) {
+
+	char password[31] = { '\0' };
+
+	switch (inputPassword(password)) {
+	case RETURN_ABORT:
+		return RETURN_ABORT;
+		break;
+	case RETURN_FAILURE:
+		return RETURN_FAILURE;
+		break;
+	default:
+		return RETURN_SUCCESS;
+	}
+
+	switch(registerPassword(password, acc)) {
+	case RETURN_TRY_AGAIN:
+		return RETURN_TRY_AGAIN;
+		break;
+	default:
+		return RETURN_SUCCESS;
+	}
 }
 
 int passwordCondition(const char* const str) {
@@ -112,7 +137,7 @@ int isWrongPassword(const ACCOUNT* const acc, const char* const password) {
 
 	PASSWORD pass = { 0 };
 	size_t nmRead = 0;
-	int rValue = 0;
+	int retValue = 0;
 	int hash = 0;
 	hash = hashNameSurname(acc);
 	char encPass[30] = { '\0' };
@@ -128,13 +153,13 @@ int isWrongPassword(const ACCOUNT* const acc, const char* const password) {
 		if (pass.hash == hash && pass.index == acc->index) {
 			fclose(fp);
 			
-			rValue = strcmp(encPass, pass.password);
+			retValue = strcmp(encPass, pass.password);
 			break;
 		}
 	}
 
 	fclose(fp);
-	return rValue;
+	return retValue;
 }
 
 int adjustDuplicateIndex(PASSWORD* const newPass) {
@@ -157,7 +182,7 @@ int adjustDuplicateIndex(PASSWORD* const newPass) {
 		if (pass.hash == newPass->hash && pass.index == newPass->index && !strcmp(pass.password, newPass->password)) {
 			printf("Please enter a different password\n");
 			fclose(fp);
-			return 1;
+			return RETURN_TRY_AGAIN;
 		} else if (pass.hash == newPass->hash && pass.index == newPass->index) {
 			newPass->index++;
 		}
@@ -166,7 +191,7 @@ int adjustDuplicateIndex(PASSWORD* const newPass) {
 	}
 
 	fclose(fp);
-	return 0;
+	return RETURN_SUCCESS;
 }
 
 char* encrypt(char* const pass) {
