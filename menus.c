@@ -14,35 +14,39 @@ int mainMenu() {
 	char choice = 0;
 
 	enum choices {
-		END_PROGRAM,
+		END_PROGRAM = '0',
+		TRANSACTION_HISTORY = '1',
+		REQUEST_LOAN = '2',
+		TRANSFER_BALANCE = '3',
+		ACCOUNT_SETTINGS = '4'
 	};
 
 	do {
-		//printMainMenu();
+		printMainMenu();
 
 		do {
 			scanf("%1c", &choice);
-			choice -= '0';
 		} while (choice < 0 && choice > 2);
 
 		switch (choice) {
-		case 1:
+		case TRANSACTION_HISTORY:
 			break;
-		case 2:
+		case REQUEST_LOAN:
+			break;
+		case TRANSFER_BALANCE:
+			break;
+		case ACCOUNT_SETTINGS:
 			break;
 		case END_PROGRAM:
-			return 0;
+			return RETURN_END;
 			break;
-		default:
-			printf("Please input a number coresponding to an option (0 - 2)\n");
 		}
 	} while (choice);
 
-	return 1;
+	return RETURN_SUCCESS;
 }
 
 int loginMenu() {
-	system("cls");
 	char choice = 0;
 
 	enum choices {
@@ -51,8 +55,7 @@ int loginMenu() {
 		LOG_IN = '2'
 	};
 
-	do {
-		printf("Please input a number coresponding to an option (0 - 2)\n");
+	while (currAcc == NULL) {
 		printLoginMenu();
 
 		do {
@@ -64,26 +67,43 @@ int loginMenu() {
 			if (signUp()) {
 				return RETURN_FAILURE;
 			}
+			else {
+				return RETURN_SUCCESS;
+			}
 			break;
 		case LOG_IN:
 			if (login(NULL)) {
 				return RETURN_FAILURE;
 			}
+			else {
+				return RETURN_SUCCESS;
+			}
 			break;
 		case END_PROGRAM:
-			return RETURN_SUCCESS;
-			break;
-		default:
-			system("cls");
+			return RETURN_END;
 			break;
 		}
-	} while (currAcc == NULL);
+	};
+}
 
-	return RETURN_SUCCESS;
+void printMainMenu() {
+	system("cls");
+	printf("Logged in as:\n");
+	printAccount(currAcc);
+	printf("Please input a number coresponding to an option (0 - 4)\n");
+	printf("1 - Transaction history\n2 - Request a loan\n3 - Transfer balance\n4 - Account settings\n0 - Exit program\n");
 }
 
 void printLoginMenu() {
+	system("cls");
+	printf("Please input a number coresponding to an option (0 - 2)\n");
 	printf("1 - Sign up\n2 - Log in\n0 - Exit program\n");
+}
+
+void printAccountSettings() {
+	system("cls");
+	printf("Please input a number coresponding to an option (0 - 2)\n");
+	printf("1 - Change password\n2 - Delete account\n0 - Go back\n");
 }
 
 ACCOUNT* signUp() {
@@ -133,11 +153,11 @@ int login(const ACCOUNT* const acc) {
 	for (int i = 0; i < 3; i++) {
 		printf("Enter passsword: ");
 		if (!inputString(password, passwordCondition)) {
-			return RETURN_FAILURE;
+			return RETURN_ABORT;
 		}
 		
 		if (!password) {
-			return RETURN_FAILURE;
+			return RETURN_ABORT;
 		}
 		system("cls");
 
@@ -163,5 +183,5 @@ int login(const ACCOUNT* const acc) {
 		return RETURN_FAILURE;
 	}
 
-	return RETURN_SUCCESS;
+	return RETURN_END;
 }

@@ -7,3 +7,5 @@ int loginMenu();
 void printLoginMenu();
 int login(const ACCOUNT* const acc);
 ACCOUNT* signUp();
+void printMainMenu();
+void printAccountSettings();

@@ -28,7 +28,7 @@ void init() {
 
 void printAccount(const ACCOUNT* const acc) {
 	if (acc) {
-		printf("Name: %s\nSurname: %s\nBalance: %lf\nID: %d\n\n", acc->name, acc->surname, acc->balance, acc->ID);
+		printf("Name:\t %s\nSurname: %s\nBalance: %0.2lf\nID:\t %d\n\n", acc->name, acc->surname, acc->balance, acc->ID);
 	}
 }
 
@@ -36,7 +36,7 @@ void printAccounts(const ACCOUNT* const* const accs, const int n) {
 	if (accs) {
 		for (int i = 0; i < n; i++) {
 			if (accs[i]) {
-				printf("Name: %s\nSurname : %s\nBalance : %lf\nID : %d\n\n", accs[i]->name, accs[i]->surname, accs[i]->balance, accs[i]->ID);
+				printf("Name:\t %s\nSurname: %s\nBalance: %0.2lf\nID:\t %d\n\n", accs[i]->name, accs[i]->surname, accs[i]->balance, accs[i]->ID);
 			}
 		}
 	}

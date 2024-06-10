@@ -5,7 +5,8 @@ enum returnIndicators {
 	RETURN_SUCCESS,
 	RETURN_ABORT,
 	RETURN_FAILURE,
-	RETURN_TRY_AGAIN
+	RETURN_TRY_AGAIN,
+	RETURN_END
 };
 
 typedef struct password {
@@ -24,3 +25,4 @@ void changePassword(ACCOUNT* const acc);
 int passwordCondition(const char* const str);
 int setPassword(ACCOUNT* const acc);
 int inputPassword(char* const password);
+int registerPassword(const char* const password, ACCOUNT* const acc);

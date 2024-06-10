@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 
+
 TRANS* createTrans(const ACCOUNT* const sender, const ACCOUNT* const reciever, const double value) {
 	TRANS* trans = NULL;
 	trans = (TRANS*)calloc(1, sizeof(TRANS));
