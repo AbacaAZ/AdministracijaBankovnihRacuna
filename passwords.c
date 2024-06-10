@@ -11,12 +11,12 @@ int inputPassword(char* const password){
 
 	do {
 		printf("Enter password: ");
-		if (!inputString(password, passwordCondition)/* || !strcmp(password, "end")*/) {
+		if (!inputString(password, passwordCondition)) {
 			return RETURN_ABORT;
 		}
 
 		printf("Confirm password: ");
-		if (!inputString(password2, passwordCondition)/* || !strcmp(password, "end")*/) {
+		if (!inputString(password2, passwordCondition)) {
 			return RETURN_ABORT;
 		}
 
@@ -60,7 +60,7 @@ int registerPassword(const char* const password, ACCOUNT* const acc) {
 }
 
 int setPassword(ACCOUNT* const acc) {
-
+	int temp = -1;
 	char password[31] = { '\0' };
 
 	switch (inputPassword(password)) {
@@ -70,17 +70,16 @@ int setPassword(ACCOUNT* const acc) {
 	case RETURN_FAILURE:
 		return RETURN_FAILURE;
 		break;
-	default:
-		return RETURN_SUCCESS;
 	}
+
 
 	switch(registerPassword(password, acc)) {
 	case RETURN_TRY_AGAIN:
 		return RETURN_TRY_AGAIN;
 		break;
-	default:
-		return RETURN_SUCCESS;
 	}
+
+	return RETURN_SUCCESS;
 }
 
 int passwordCondition(const char* const str) {
@@ -97,7 +96,7 @@ int passwordCondition(const char* const str) {
 	return valid;
 }
 
-void changePassword(ACCOUNT* const acc) {
+int changePassword(ACCOUNT* const acc) {
 	FILE* fp = NULL;
 	fp = fopen("passwords.bin", "rb+");
 	if (!fp) {
@@ -113,15 +112,69 @@ void changePassword(ACCOUNT* const acc) {
 	while (1) {
 		nmRead = fread(&pass, sizeof(PASSWORD), 1, fp);
 		if (nmRead == 0) {
+			fclose(fp);
+			return RETURN_FAILURE;
+		}
+
+		if (pass.hash == hash && pass.index == acc->index) {
+			char password[31] = { '\0' };
+
+			inputPassword(password);
+			encrypt(password);
+			strcpy(pass.password, password);
+			
+			fseek(fp, (-1) * sizeof(PASSWORD), SEEK_CUR);
+			fwrite(&pass, sizeof(PASSWORD), 1, fp);
+
+			break;
+		}
+	}
+
+	fclose(fp);
+	return RETURN_SUCCESS;
+}
+
+void deletePassword(const ACCOUNT* const acc) {
+	if (!acc) {
+		return;
+	}
+
+	FILE* fp = NULL;
+	fp = fopen("passwords.bin", "rb+");
+	if (!fp) {
+		perror("Failed to open file");
+		exit(EXIT_FAILURE);
+	}
+
+	PASSWORD pass = { 0 };
+	PASSWORD next = { 0 };
+	size_t nmRead = 1;
+	int hash = 0;
+	hash = hashNameSurname(acc);
+
+	while (1) {
+		nmRead = fread(&pass, sizeof(PASSWORD), 1, fp);
+		if (!nmRead) {
 			break;
 		}
 
 		if (pass.hash == hash && pass.index == acc->index) {
-			//setPassword(acc); // wrong
-			fseek(fp, (-1) * (long long)(sizeof(PASSWORD)), SEEK_CUR);
-			//fwrite()
+			fread(&next, sizeof(PASSWORD), 1, fp);
 			break;
 		}
+	}
+
+	fseek(fp, (-2) * sizeof(PASSWORD), SEEK_CUR);
+
+	while (pass.hash) {
+		fwrite(&next, sizeof(PASSWORD), 1, fp);
+
+		nmRead = fread(&pass, sizeof(PASSWORD), 1, fp);
+		if (!nmRead) {
+			break;
+		}
+		fread(&next, sizeof(PASSWORD), 1, fp);
+		fseek(fp, (-1) * sizeof(PASSWORD), SEEK_CUR);
 	}
 
 	fclose(fp);

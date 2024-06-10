@@ -8,7 +8,7 @@
 #include "bank_account.h"
 #include "passwords.h"
 
-const ACCOUNT* currAcc = NULL;
+extern const ACCOUNT* currAcc = NULL;
 
 int mainMenu() {
 	char choice = 0;
@@ -25,8 +25,8 @@ int mainMenu() {
 		printMainMenu();
 
 		do {
-			scanf("%1c", &choice);
-		} while (choice < 0 && choice > 2);
+			choice = getch();
+		} while (choice < '0' && choice > '4');
 
 		switch (choice) {
 		case TRANSACTION_HISTORY:
@@ -36,18 +36,64 @@ int mainMenu() {
 		case TRANSFER_BALANCE:
 			break;
 		case ACCOUNT_SETTINGS:
+			system("cls");
+			choice = accountSettingsMenu();
 			break;
 		case END_PROGRAM:
 			return RETURN_END;
 			break;
+		default:
+			system("cls");
 		}
 	} while (choice);
 
 	return RETURN_SUCCESS;
 }
 
-int loginMenu() {
+int accountSettingsMenu() {
 	char choice = 0;
+
+	enum choices {
+		GO_BACK = '0',
+		CHANGE_PASSWORD = '1',
+		DELETE_ACCOUNT = '2'
+	};
+
+	do {
+		printAccountSettingsMenu();
+
+		do {
+			choice = getch();
+		} while (choice < '0' && choice > '2');
+
+		switch (choice) {
+		case CHANGE_PASSWORD:
+			if (changePassword(currAcc)) {
+				system("cls");
+				printf("Password change failed\n\n");
+			}
+			else {
+				system("cls");
+				printf("Password succesfully changed\n\n");
+			}
+			return RETURN_END;
+			break;
+		case DELETE_ACCOUNT:
+
+			return RETURN_SUCCESS;
+			break;
+		case GO_BACK:
+			system("cls");
+			return RETURN_END;
+			break;
+		default:
+			system("cls");
+		}
+	} while (choice);
+}
+
+int loginMenu() {
+	volatile char choice = 0;
 
 	enum choices {
 		END_PROGRAM = '0',
@@ -59,35 +105,28 @@ int loginMenu() {
 		printLoginMenu();
 
 		do {
-			scanf("%1c", &choice);
-		} while (choice < 0 && choice > 2);
+			choice = getch();
+		} while (choice < '0' && choice > '2');
 
 		switch (choice) {
 		case SIGN_UP:
-			if (signUp()) {
-				return RETURN_FAILURE;
-			}
-			else {
-				return RETURN_SUCCESS;
-			}
+			signUp();
+			return RETURN_SUCCESS;
 			break;
 		case LOG_IN:
-			if (login(NULL)) {
-				return RETURN_FAILURE;
-			}
-			else {
-				return RETURN_SUCCESS;
-			}
+			login(NULL);
+			return RETURN_SUCCESS;
 			break;
 		case END_PROGRAM:
 			return RETURN_END;
 			break;
+		default:
+			system("cls");
 		}
 	};
 }
 
 void printMainMenu() {
-	system("cls");
 	printf("Logged in as:\n");
 	printAccount(currAcc);
 	printf("Please input a number coresponding to an option (0 - 4)\n");
@@ -95,13 +134,13 @@ void printMainMenu() {
 }
 
 void printLoginMenu() {
-	system("cls");
 	printf("Please input a number coresponding to an option (0 - 2)\n");
 	printf("1 - Sign up\n2 - Log in\n0 - Exit program\n");
 }
 
-void printAccountSettings() {
-	system("cls");
+void printAccountSettingsMenu() {
+	printf("Logged in as:\n");
+	printAccount(currAcc);
 	printf("Please input a number coresponding to an option (0 - 2)\n");
 	printf("1 - Change password\n2 - Delete account\n0 - Go back\n");
 }
@@ -116,6 +155,7 @@ ACCOUNT* signUp() {
 			return NULL;
 		}
 	}
+	system("cls");
 	return acc;
 }
 
@@ -136,30 +176,32 @@ int login(const ACCOUNT* const acc) {
 	if (inputString(name, nameCondition)) {
 		printf("Enter surname: ");
 		if (!inputString(surname, surnameCondition)) {
-			return RETURN_FAILURE;
+			system("cls");
+			return RETURN_ABORT;
 		}
 	}
 	else {
-		return RETURN_FAILURE;
+		system("cls");
+		return RETURN_ABORT;
 	}
 	
 
 	int matches = 0;
 	ACCOUNT** accs = findByFullName(name, surname, &matches);
+	if (!accs) {
+		system("cls");
+		return RETURN_NOT_FOUND;
+	}
 
 	int match = 0;
 	int id = -1;
+	const int LOGIN_ATTEMPTS = 3;
 
-	for (int i = 0; i < 3; i++) {
+	for (int i = 0; i < LOGIN_ATTEMPTS; i++) {
 		printf("Enter passsword: ");
-		if (!inputString(password, passwordCondition)) {
+		if (!inputString(password, passwordCondition) || !password) {
 			return RETURN_ABORT;
 		}
-		
-		if (!password) {
-			return RETURN_ABORT;
-		}
-		system("cls");
 
 		for (int j = 0; j < matches; j++) {
 			match = !isWrongPassword(accs[j], password);
@@ -172,14 +214,17 @@ int login(const ACCOUNT* const acc) {
 
 		if (match) {
 			currAcc = findByID(id);
+			system("cls");
+			return RETURN_SUCCESS;
 			break;
-		} else if (i < 2) {
-			printf("Password and name don't match!\nAttempts left: %d\n", 2 - i);
+		} else if (i < LOGIN_ATTEMPTS - 1) {
+			printf("Password and name don't match!\nAttempts left: %d\n", LOGIN_ATTEMPTS - 1 - i);
 		}
 
 	}
 
 	if (!currAcc) {
+		system("cls");
 		return RETURN_FAILURE;
 	}
 

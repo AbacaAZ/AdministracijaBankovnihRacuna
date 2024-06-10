@@ -6,7 +6,8 @@ enum returnIndicators {
 	RETURN_ABORT,
 	RETURN_FAILURE,
 	RETURN_TRY_AGAIN,
-	RETURN_END
+	RETURN_END,
+	RETURN_NOT_FOUND
 };
 
 typedef struct password {
@@ -21,8 +22,9 @@ int hashNameSurname(const ACCOUNT* const acc);
 int sumStr(const char* const str);
 int adjustDuplicateIndex(PASSWORD* const newPass);
 int isWrongPassword(const ACCOUNT* const acc, const char* const password);
-void changePassword(ACCOUNT* const acc);
+int changePassword(ACCOUNT* const acc);
 int passwordCondition(const char* const str);
 int setPassword(ACCOUNT* const acc);
 int inputPassword(char* const password);
 int registerPassword(const char* const password, ACCOUNT* const acc);
+void deletePassword(const ACCOUNT* const acc);

@@ -82,7 +82,7 @@ ACCOUNT** findByFullName(const char* const name, const char* const surname, int*
 		fclose(fp);
 		safeFreeArr(&temp, g_accounts);
 		system("cls");
-		printf("No accounts with that name and surname\n");
+		printf("No accounts with that name and surname\n\n");
 		return NULL;
 	}
 

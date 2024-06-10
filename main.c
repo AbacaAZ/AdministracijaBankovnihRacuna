@@ -11,29 +11,24 @@
 
 int main() {
 	init();
-	
+	extern const ACCOUNT* currAcc;
 	int option = -1;
 	while (option != RETURN_END) {
+		if (!currAcc) {
+			option = loginMenu();
+		}
+		else {
+			option = mainMenu();
+		}
 
-		switch (loginMenu()) {
+		switch (option) {
 		case RETURN_END:
-			option = RETURN_END;
-			break;
-		case RETURN_SUCCESS:
-
-			switch (mainMenu()) {
-			case RETURN_END:
-				option = RETURN_END;
-				break;
-			default:
-				continue;
-			}
-
 			break;
 		default:
 			continue;
 		}
 
 	}
-	
+
+	deletePassword(currAcc);
 }
