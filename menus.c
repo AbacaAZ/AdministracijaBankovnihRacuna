@@ -3,6 +3,7 @@
 #endif
 #include <stdio.h>
 #include <stdlib.h>
+#include <conio.h>
 #include "menus.h"
 #include "util.h"
 #include "bank_account.h"
@@ -18,15 +19,16 @@ int mainMenu() {
 		TRANSACTION_HISTORY = '1',
 		REQUEST_LOAN = '2',
 		TRANSFER_BALANCE = '3',
-		ACCOUNT_SETTINGS = '4'
+		ACCOUNT_SETTINGS = '4',
+		LOG_OUT = '5'
 	};
 
 	do {
 		printMainMenu();
 
 		do {
-			choice = getch();
-		} while (choice < '0' && choice > '4');
+			choice = _getch();
+		} while (choice < '0' && choice > '5');
 
 		switch (choice) {
 		case TRANSACTION_HISTORY:
@@ -38,6 +40,16 @@ int mainMenu() {
 		case ACCOUNT_SETTINGS:
 			system("cls");
 			choice = accountSettingsMenu();
+			switch (choice) {
+			case RETURN_ABORT:
+				return RETURN_ABORT;
+				break;
+			}
+			break;
+		case LOG_OUT:
+			system("cls");
+			logOut();
+			return RETURN_ABORT;
 			break;
 		case END_PROGRAM:
 			return RETURN_END;
@@ -52,6 +64,7 @@ int mainMenu() {
 
 int accountSettingsMenu() {
 	char choice = 0;
+	int temp = 0;
 
 	enum choices {
 		GO_BACK = '0',
@@ -63,24 +76,31 @@ int accountSettingsMenu() {
 		printAccountSettingsMenu();
 
 		do {
-			choice = getch();
+			choice = _getch();
 		} while (choice < '0' && choice > '2');
 
 		switch (choice) {
 		case CHANGE_PASSWORD:
-			if (changePassword(currAcc)) {
+			temp = changePassword(currAcc);
+			if (temp) {
+				if (temp == RETURN_TRY_AGAIN) {
+					changePassword(currAcc);
+				}
 				system("cls");
 				printf("Password change failed\n\n");
+				return RETURN_FAILURE;
 			}
 			else {
 				system("cls");
 				printf("Password succesfully changed\n\n");
+				return RETURN_SUCCESS;
 			}
-			return RETURN_END;
 			break;
 		case DELETE_ACCOUNT:
-
-			return RETURN_SUCCESS;
+			deleteAccount(currAcc);
+			logOut();
+			system("cls");
+			return RETURN_ABORT;
 			break;
 		case GO_BACK:
 			system("cls");
@@ -90,6 +110,8 @@ int accountSettingsMenu() {
 			system("cls");
 		}
 	} while (choice);
+
+	return RETURN_END;
 }
 
 int loginMenu() {
@@ -105,7 +127,7 @@ int loginMenu() {
 		printLoginMenu();
 
 		do {
-			choice = getch();
+			choice = _getch();
 		} while (choice < '0' && choice > '2');
 
 		switch (choice) {
@@ -124,13 +146,15 @@ int loginMenu() {
 			system("cls");
 		}
 	};
+
+	return RETURN_ABORT;
 }
 
 void printMainMenu() {
 	printf("Logged in as:\n");
 	printAccount(currAcc);
 	printf("Please input a number coresponding to an option (0 - 4)\n");
-	printf("1 - Transaction history\n2 - Request a loan\n3 - Transfer balance\n4 - Account settings\n0 - Exit program\n");
+	printf("1 - Transaction history\n2 - Request a loan\n3 - Transfer balance\n4 - Account settings\n5 - Log out\n0 - Exit program\n");
 }
 
 void printLoginMenu() {
@@ -152,10 +176,10 @@ ACCOUNT* signUp() {
 	if (acc) {
 		registerAccount(acc);
 		if (login(acc)) {
+			system("cls");
 			return NULL;
 		}
 	}
-	system("cls");
 	return acc;
 }
 
@@ -189,7 +213,6 @@ int login(const ACCOUNT* const acc) {
 	int matches = 0;
 	ACCOUNT** accs = findByFullName(name, surname, &matches);
 	if (!accs) {
-		system("cls");
 		return RETURN_NOT_FOUND;
 	}
 
@@ -200,6 +223,7 @@ int login(const ACCOUNT* const acc) {
 	for (int i = 0; i < LOGIN_ATTEMPTS; i++) {
 		printf("Enter passsword: ");
 		if (!inputString(password, passwordCondition) || !password) {
+			system("cls");
 			return RETURN_ABORT;
 		}
 
@@ -229,4 +253,8 @@ int login(const ACCOUNT* const acc) {
 	}
 
 	return RETURN_END;
+}
+
+inline void logOut() {
+	safeFree(&currAcc);
 }

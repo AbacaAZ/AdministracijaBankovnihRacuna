@@ -10,3 +10,4 @@ ACCOUNT* signUp();
 void printMainMenu();
 void printAccountSettingsMenu();
 int accountSettingsMenu();
+inline void logOut();

@@ -10,7 +10,7 @@ typedef struct bankAccount {
 
 void init();
 ACCOUNT* createAccount();
-void registerAccount(ACCOUNT* const acc);
+void registerAccount(const ACCOUNT* const acc);
 int setName(ACCOUNT* const acc);
 int setSurname(ACCOUNT* const acc);
 void setID(ACCOUNT* const acc);
@@ -22,3 +22,4 @@ void printAccount(const ACCOUNT* const acc);
 void printAccounts(const ACCOUNT* const* const accs, const int n);
 ACCOUNT** findByFullName(const char* const name, const char* const surname, int* const count);
 ACCOUNT* findByID(const int ID);
+void deleteAccount(ACCOUNT* const acc);

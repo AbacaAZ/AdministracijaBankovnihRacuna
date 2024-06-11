@@ -20,15 +20,5 @@ int main() {
 		else {
 			option = mainMenu();
 		}
-
-		switch (option) {
-		case RETURN_END:
-			break;
-		default:
-			continue;
-		}
-
 	}
-
-	deletePassword(currAcc);
 }

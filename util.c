@@ -20,7 +20,7 @@ char* inputString(char* const str, int (*condition)(const char* const)) {
 	int check = 1;
 
 	do {
-		scanf("%30s", str);
+		scanf("%30[^\n]%*c", str);
 		check = strcmp(str, "end");
 	} while (check && !condition(str));
 
@@ -38,7 +38,7 @@ void safeFree(void** const p) {
 	*p = NULL;
 }
 
-void safeFreeArr(ACCOUNT*** const pArr, const int n) {
+void safeFreeArr(void*** const pArr, const int n) {
 	if (*pArr != NULL) {
 		for (int i = 0; i < n; i++) {
 			if (pArr[0][i]) {

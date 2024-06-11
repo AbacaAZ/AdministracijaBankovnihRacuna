@@ -72,7 +72,8 @@ ACCOUNT** findByFullName(const char* const name, const char* const surname, int*
 		read = fread(temp[i], sizeof(ACCOUNT), 1, fp);
 		if (!read) {
 			break;
-		} else if (!strcmp(temp[i]->name, name) && !strcmp(temp[i]->surname, surname)) {
+		}
+		else if (!strcmp(temp[i]->name, name) && !strcmp(temp[i]->surname, surname)) {
 			i++;
 		}
 	}
@@ -82,7 +83,7 @@ ACCOUNT** findByFullName(const char* const name, const char* const surname, int*
 		fclose(fp);
 		safeFreeArr(&temp, g_accounts);
 		system("cls");
-		printf("No accounts with that name and surname\n\n");
+		printf("No accounts with that name and surname found\n\n");
 		return NULL;
 	}
 
@@ -176,7 +177,7 @@ ACCOUNT* createAccount(){
 	return acc;
 }
 
-void registerAccount(ACCOUNT* const acc) {
+void registerAccount(const ACCOUNT* const acc) {
 	if (!acc) {
 		return;
 	}
@@ -188,10 +189,57 @@ void registerAccount(ACCOUNT* const acc) {
 		exit(EXIT_FAILURE);
 	}
 
+	ACCOUNT temp = { 0 };
+	size_t nmRead = 0;
 
-	fseek(fp, 0, SEEK_END);
+	while (1) {
+		nmRead = fread(&temp, sizeof(ACCOUNT), 1, fp);
+		if (temp.ID == -1) {
+			fseek(fp, (-1) * sizeof(ACCOUNT), SEEK_CUR);
+			break;
+		}
+		if (!nmRead) {
+			break;
+		}
+	}
+
 	fwrite(acc, sizeof(ACCOUNT), 1, fp);
 
+	fclose(fp);
+}
+
+void deleteAccount(ACCOUNT* const acc) {
+	if (!acc) {
+		return;
+	}
+
+	FILE* fp = NULL;
+	fp = fopen("accounts.bin", "rb+");
+	if (!fp) {
+		perror("Failed to open file");
+		exit(EXIT_FAILURE);
+	}
+
+	deletePassword(acc);
+
+	ACCOUNT empty = { 0, "EMPTY", "EMPTY", -1, 0};
+	ACCOUNT temp = { 0 };
+	size_t nmRead = 0;
+
+	while (1) {
+		nmRead = fread(&temp, sizeof(ACCOUNT), 1, fp);
+		if (!nmRead) {
+			break;
+		}
+		else if (temp.ID == acc->ID) {
+			fseek(fp, (-1) * sizeof(ACCOUNT), SEEK_CUR);
+			fwrite(&empty, sizeof(ACCOUNT), 1, fp);
+			break;
+		}
+	}
+
+	g_accounts--;
+	safeFree(&acc);
 	fclose(fp);
 }
 
@@ -247,7 +295,9 @@ int countAccounts() {
 	size_t read = 0;
 	do {
 		read = fread(acc, sizeof(ACCOUNT), 1, fp);
-		count++;
+		if (!(acc->ID == -1)) {
+			count++;
+		}
 	}while (read);
 
 	fclose(fp);

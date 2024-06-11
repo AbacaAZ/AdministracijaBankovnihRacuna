@@ -5,23 +5,29 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <conio.h>
 
 int inputPassword(char* const password){
 	char password2[31] = { '\0' };
 
 	do {
-		printf("Enter password: ");
-		if (!inputString(password, passwordCondition)) {
+		printf("Enter password: \n");
+		enterPassword(password);
+
+		if (!strcmp(password, "end") || !passwordCondition(password)) {
 			return RETURN_ABORT;
 		}
 
-		printf("Confirm password: ");
-		if (!inputString(password2, passwordCondition)) {
+		printf("Confirm password: \n");
+		enterPassword(password2);
+
+		if (!strcmp(password2, "end") || !passwordCondition(password2)) {
 			return RETURN_ABORT;
 		}
 
 		if (strcmp(password, password2)) {
-			printf("The passwords don't match\n");
+			system("cls");
+			printf("The passwords don't match\n\n");
 			return RETURN_FAILURE;
 		}
 		else {
@@ -30,9 +36,35 @@ int inputPassword(char* const password){
 	} while (1);
 }
 
-int registerPassword(const char* const password, ACCOUNT* const acc) {
+void enterPassword(char* const password) {
+	char temp[31] = { '\0' };
+	for (int i = 0; i < 30; i++) {
+		temp[i] = _getch();
+
+		switch (temp[i]) {
+		case 8:
+			if (i >= 1) {
+				i--;
+				printf("\b \b");
+			}
+			break;
+		case '\n':
+		case 13:
+			temp[i] = '\0';
+			printf("\n");
+			return 0;
+			break;
+		default:
+			printf("*");
+			password[i] = temp[i];
+		}
+	}
+}
+
+int registerPassword(char* const password, ACCOUNT* const acc) {
 	PASSWORD pass = { 0 };
-	int nmRead = 0;
+	PASSWORD temp = { 0 };
+	size_t nmRead = 0;
 	int hash = 0;
 	hash = hashNameSurname(acc);
 
@@ -52,7 +84,17 @@ int registerPassword(const char* const password, ACCOUNT* const acc) {
 		exit(EXIT_FAILURE);
 	}
 
-	fseek(fp, 0, SEEK_END);
+	while (1) {
+		nmRead = fread(&temp, sizeof(PASSWORD), 1, fp);
+		if (temp.hash == -1 && temp.index == -1 && strcmp(temp.password, "EMPTY")) {
+			fseek(fp, (-1) * sizeof(PASSWORD), SEEK_CUR);
+			break;
+		}
+		if (!nmRead) {
+			break;
+		}
+	}
+
 	fwrite(&pass, sizeof(PASSWORD), 1, fp);
 
 	fclose(fp);
@@ -96,7 +138,7 @@ int passwordCondition(const char* const str) {
 	return valid;
 }
 
-int changePassword(ACCOUNT* const acc) {
+int changePassword(const ACCOUNT* const acc) {
 	FILE* fp = NULL;
 	fp = fopen("passwords.bin", "rb+");
 	if (!fp) {
@@ -116,17 +158,55 @@ int changePassword(ACCOUNT* const acc) {
 			return RETURN_FAILURE;
 		}
 
+		
 		if (pass.hash == hash && pass.index == acc->index) {
 			char password[31] = { '\0' };
 
 			inputPassword(password);
 			encrypt(password);
+
 			strcpy(pass.password, password);
+
+			while (checkIfUniquePassword(&pass) == RETURN_TRY_AGAIN) {
+				inputPassword(password) // fix
+				checkIfUniquePassword(&pass);
+			}
 			
 			fseek(fp, (-1) * sizeof(PASSWORD), SEEK_CUR);
 			fwrite(&pass, sizeof(PASSWORD), 1, fp);
 
 			break;
+		}
+	}
+
+	fclose(fp);
+	return RETURN_SUCCESS;
+}
+
+int checkIfUniquePassword(PASSWORD* const newPass) {
+	FILE* fp = NULL;
+	fp = fopen("passwords.bin", "rb+");
+	if (!fp) {
+		perror("Failed to open file");
+		exit(EXIT_FAILURE);
+	}
+
+	PASSWORD pass = { 0 };
+	size_t nmRead = 0;
+
+	while (1) {
+		nmRead = fread(&pass, sizeof(PASSWORD), 1, fp);
+		if (nmRead == 0) {
+			break;
+		}
+
+		if (pass.hash == newPass->hash && pass.index == newPass->index && !strcmp(pass.password, newPass->password)) {
+			printf("Please enter a different password\n");
+			fclose(fp);
+			return RETURN_TRY_AGAIN;
+		}
+		else if (pass.hash == newPass->hash && pass.index == newPass->index) {
+			newPass->index++;
 		}
 	}
 
@@ -147,7 +227,7 @@ void deletePassword(const ACCOUNT* const acc) {
 	}
 
 	PASSWORD pass = { 0 };
-	PASSWORD next = { 0 };
+	PASSWORD empty = { -1, -1, "EMPTY"};
 	size_t nmRead = 1;
 	int hash = 0;
 	hash = hashNameSurname(acc);
@@ -157,24 +237,11 @@ void deletePassword(const ACCOUNT* const acc) {
 		if (!nmRead) {
 			break;
 		}
-
-		if (pass.hash == hash && pass.index == acc->index) {
-			fread(&next, sizeof(PASSWORD), 1, fp);
+		else if (pass.hash == hash && pass.index == acc->index) {
+			fseek(fp, (-1) * sizeof(PASSWORD), SEEK_CUR);
+			fwrite(&empty, sizeof(PASSWORD), 1, fp);
 			break;
 		}
-	}
-
-	fseek(fp, (-2) * sizeof(PASSWORD), SEEK_CUR);
-
-	while (pass.hash) {
-		fwrite(&next, sizeof(PASSWORD), 1, fp);
-
-		nmRead = fread(&pass, sizeof(PASSWORD), 1, fp);
-		if (!nmRead) {
-			break;
-		}
-		fread(&next, sizeof(PASSWORD), 1, fp);
-		fseek(fp, (-1) * sizeof(PASSWORD), SEEK_CUR);
 	}
 
 	fclose(fp);
@@ -239,8 +306,6 @@ int adjustDuplicateIndex(PASSWORD* const newPass) {
 		} else if (pass.hash == newPass->hash && pass.index == newPass->index) {
 			newPass->index++;
 		}
-
-		
 	}
 
 	fclose(fp);
